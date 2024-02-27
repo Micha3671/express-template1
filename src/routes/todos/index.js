@@ -49,24 +49,53 @@ TodosRouter.get("/byid", async (req, res) => {
   res.status(StatusCodes.OK).json({ todo: todo });
 });
 
-// Alle Todos von einer UserId
-TodosRouter.get("/byuserid", (req, res) => {
-  // const userId = req.body.userId;
-  // const userId = parseInt(req.query.userId);
-  const userId = req.query.userId;
-  console.log(userId);
+// // Alle Todos von einer UserId
+// TodosRouter.get("/byuserid", (req, res) => {
+//   // const userId = req.body.userId;
+//   // const userId = parseInt(req.query.userId);
+//   const userId = req.query.userId;
+//   console.log(userId);
 
+//   if (!userId) {
+//     res
+//       .status(StatusCodes.BAD_REQUEST)
+//       .send(ReasonPhrases.BAD_REQUEST + " Keine userID");
+//     return;
+//   }
+
+//   const userTodos = todos.filter((todo) => todo.userId == userId);
+
+//   res.status(StatusCodes.OK).json(userTodos);
+//   // res.status(StatusCodes.OK).send(JSON.stringify(userTodos)); //alternativ
+// });
+
+TodosRouter.get("/byuserid", async (req, res) => {
+  const userId = req.query.userId;
   if (!userId) {
-    res
-      .status(StatusCodes.BAD_REQUEST)
-      .send(ReasonPhrases.BAD_REQUEST + " Keine userID");
-    return;
+    return res.status(StatusCodes.BAD_REQUEST).send(ReasonPhrases.BAD_REQUEST);
   }
 
-  const userTodos = todos.filter((todo) => todo.userId == userId);
+  const todo = await TodoModel.findOne({ where: { userId: userId } });
+  if (!todo) {
+    return res.status(StatusCodes.NOT_FOUND).send(ReasonPhrases.NOT_FOUND);
+  }
 
-  res.status(StatusCodes.OK).json(userTodos);
-  // res.status(StatusCodes.OK).send(JSON.stringify(userTodos)); //alternativ
+  res.status(StatusCodes.OK).json({ todo: todo });
+});
+
+TodosRouter.put("/mark", async (req, res) => {
+  const { todoId, newIsDone } = req.body;
+
+  await TodoModel.update(
+    {
+      isDone: newIsDone,
+    },
+    { where: { id: todoId } }
+  );
+
+  const updatedTodo = await TodoModel.findByPk(todoId);
+
+  res.status(StatusCodes.OK).json({ updatedTodo: updatedTodo });
 });
 
 TodosRouter.get("/all", async (req, res) => {
@@ -75,24 +104,41 @@ TodosRouter.get("/all", async (req, res) => {
 });
 
 // PUT REQUESTS
-TodosRouter.put("/mark", (req, res) => {
-  const { id, newIsDone } = req.body;
+// TodosRouter.put("/mark", (req, res) => {
+//   const { id, newIsDone } = req.body;
 
-  const todo = todos.find((item) => item.id == id);
+//   const todo = todos.find((item) => item.id == id);
 
-  // setzt das zuvor definierte todo auf den neuen isDone WErt
-  todo.isDone = newIsDone;
+//   // setzt das zuvor definierte todo auf den neuen isDone WErt
+//   todo.isDone = newIsDone;
 
-  // Todo rauslöschen
-  const newTodos = todos.filter((item) => item.id != id);
+//   // Todo rauslöschen
+//   const newTodos = todos.filter((item) => item.id != id);
 
-  // Geupdatete Todo wieder hinzufügen
-  newTodos.push(todo);
+//   // Geupdatete Todo wieder hinzufügen
+//   newTodos.push(todo);
 
-  todos = newTodos;
+//   todos = newTodos;
 
-  res.status(StatusCodes.OK).json({ updatedTodo: todo });
-});
+//   res.status(StatusCodes.OK).json({ updatedTodo: todo });
+// });
+
+// TodosRouter.put("/mark", async (req, res) => {
+//   const { todoId, newIsDone } = req.body;
+//   console.log(todoId, newIsDone);
+
+//   // Löschen des vorhandenen Todos
+//   await TodoModel.destroy({ where: { id: todoId } });
+
+//   // Neues Todo mit aktualisiertem isDone-Wert einfügen
+//   const updatedTodo = await TodoModel.create({
+//     id: todoId,
+//     isDone: newIsDone,
+//     // Andere Felder, die Sie möglicherweise einfügen möchten
+//   });
+
+//   res.status(StatusCodes.OK).json({ updatedTodo: updatedTodo });
+// });
 
 TodosRouter.put("/update", async (req, res) => {
   const { todoId, newTask, newIsDone, newDueDate } = req.body;
